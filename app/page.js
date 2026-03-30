@@ -22,10 +22,16 @@ export default function LeadershipEngine() {
         body: JSON.stringify({ profile, focusArea })
       });
       const data = await res.json();
-      setScenario(data);
-      setStep('lab');
+      
+      // Ensure we have data before moving to lab
+      if (data && data.headline) {
+        setScenario(data);
+        setStep('lab');
+      } else {
+        throw new Error("Invalid data received");
+      }
     } catch (e) {
-      alert("Generation failed. Check Vercel logs.");
+      alert("AI was too busy. Please try clicking 'Generate' again.");
       setStep('profile');
     }
     setLoading(false);
@@ -64,7 +70,7 @@ export default function LeadershipEngine() {
              <h2 style={{ fontSize: '16px', color: '#38bdf8', marginBottom: '20px' }}>Step 1: Define the Challenge</h2>
              
              <label style={s.label}>Your Role</label>
-             <select style={s.input} onChange={e => setProfile({...profile, role: e.target.value})}>
+             <select style={s.input} value={profile.role} onChange={e => setProfile({...profile, role: e.target.value})}>
                 <option>Product Manager</option>
                 <option>Engineering Leader</option>
                 <option>Founder/CEO</option>
@@ -72,13 +78,13 @@ export default function LeadershipEngine() {
 
              <label style={s.label}>What should the AI test you on?</label>
              <textarea 
-                style={{...s.input, minHeight: '80px', border: '1px solid #38bdf8', padding: '10px'}} 
+                style={{...s.input, minHeight: '80px', border: '1px solid #38bdf8'}} 
                 value={focusArea}
                 onChange={e => setFocusArea(e.target.value)}
                 placeholder="e.g. Handling a 20% budget cut"
              />
 
-             <button style={s.btn} onClick={handleStart}>Generate Custom Scenario</button>
+             <button style={s.btn} onClick={handleStart} disabled={loading}>Generate Custom Scenario</button>
           </div>
         )}
 
@@ -91,10 +97,12 @@ export default function LeadershipEngine() {
 
         {step === 'lab' && (
           <div>
-            <div style={{ background: '#050a15', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-                <div style={{ fontSize: '10px', color: '#38bdf8' }}>SCENARIO</div>
-                <h3 style={{ margin: '5px 0' }}>{scenario?.headline}</h3>
-                <p style={{ fontSize: '14px', color: '#94a3b8', fontStyle: 'italic' }}>{scenario?.stakeholderTitle}: "{scenario?.context}"</p>
+            <div style={{ background: '#050a15', padding: '20px', borderRadius: '12px', marginBottom: '20px', borderLeft: '4px solid #38bdf8' }}>
+                <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 'bold', textTransform: 'uppercase' }}>Current Scenario</div>
+                <h3 style={{ margin: '10px 0', lineHeight: '1.4' }}>{scenario?.headline || "Loading..."}</h3>
+                <p style={{ fontSize: '14px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
+                    {scenario?.stakeholderTitle || "Stakeholder"}: "{scenario?.context || "Waiting for input..."}"
+                </p>
             </div>
 
             {currentPushback && (
@@ -118,8 +126,8 @@ export default function LeadershipEngine() {
             ) : (
               <div>
                 <h2 style={{ color: '#22c55e' }}>Complete</h2>
-                <p style={{ fontSize: '14px' }}>{result.feedback}</p>
-                <button style={{ ...s.btn, background: '#1e293b', color: '#fff' }} onClick={() => window.location.reload()}>Restart</button>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>{result.feedback}</p>
+                <button style={{ ...s.btn, background: '#1e293b', color: '#fff', marginTop: '10px' }} onClick={() => window.location.reload()}>Restart</button>
               </div>
             )}
           </div>
@@ -130,7 +138,7 @@ export default function LeadershipEngine() {
 }
 
 const s = {
-    label: { display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '5px', textTransform: 'uppercase' },
-    input: { width: '100%', padding: '12px', marginBottom: '15px', background: '#050a15', border: '1px solid #1e293b', color: '#fff', borderRadius: '10px', fontSize: '15px' },
-    btn: { width: '100%', padding: '15px', background: '#38bdf8', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }
+    label: { display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '5px', textTransform: 'uppercase', fontWeight: 'bold' },
+    input: { width: '100%', padding: '12px', marginBottom: '15px', background: '#050a15', border: '1px solid #1e293b', color: '#fff', borderRadius: '10px', fontSize: '15px', outline: 'none' },
+    btn: { width: '100%', padding: '15px', background: '#38bdf8', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', color: '#000' }
 };
