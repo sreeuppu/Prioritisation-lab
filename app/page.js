@@ -3,17 +3,17 @@ import { useState } from 'react';
 
 export default function LeadershipEngine() {
   const [profile, setProfile] = useState({ role: 'Product Manager', level: 'Senior', industry: 'SaaS' });
-  const [focusArea, setFocusArea] = useState('Prioritization');
+  const [focusArea, setFocusArea] = useState('Prioritization under pressure');
   const [scenario, setScenario] = useState(null);
   const [input, setInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [result, setResult] = useState(null);
   const [currentPushback, setCurrentPushback] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('profile'); // profile, generating, lab
+  const [step, setStep] = useState('profile'); 
 
-  // This calls your /api/generate route to create the scenario
   async function handleStart() {
+    if (!focusArea) return alert("Please enter what you want to be tested on.");
     setStep('generating');
     setLoading(true);
     try {
@@ -26,13 +26,12 @@ export default function LeadershipEngine() {
       setScenario(data);
       setStep('lab');
     } catch (e) {
-      alert("Error generating scenario.");
+      alert("Error generating scenario. Make sure /api/generate/route.js exists!");
       setStep('profile');
     }
     setLoading(false);
   }
 
-  // This calls your /api/assess route for the sparring loop
   async function handleAssess() {
     setLoading(true);
     try {
@@ -42,7 +41,6 @@ export default function LeadershipEngine() {
         body: JSON.stringify({ userInput: input, profile, scenario, chatHistory })
       });
       const data = await res.json();
-      
       if (data.decision === "PUSHBACK") {
         setCurrentPushback(data.pushbackText);
         setChatHistory([...chatHistory, { role: 'user', text: input }, { role: 'model', text: data.pushbackText }]);
@@ -57,10 +55,10 @@ export default function LeadershipEngine() {
 
   return (
     <div style={styles.container}>
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       <div style={styles.card}>
         <h1 style={styles.h1}>Leadership Sparring Partner</h1>
 
-        {/* STEP 1: PROFILE & FOCUS AREA */}
         {step === 'profile' && (
           <div style={styles.section}>
              <h2 style={styles.h2}>Set Your Profile</h2>
@@ -80,11 +78,11 @@ export default function LeadershipEngine() {
                 <option>Executive/VP</option>
              </select>
 
-             {/* NEW FOCUS AREA INPUT */}
+             {/* FOCUS AREA INPUT - I ADDED A BORDER TO MAKE IT OBVIOUS */}
              <label style={styles.label}>What do you want to be tested on?</label>
              <textarea 
-                style={{...styles.textarea, minHeight:'80px', marginBottom: '20px'}} 
-                placeholder="e.g. Prioritization under pressure, Delivering bad news to a CEO, Handling budget cuts..."
+                style={{...styles.textarea, minHeight:'80px', border: '2px solid #38bdf8'}} 
+                placeholder="e.g. Prioritization under pressure, handling budget cuts..."
                 value={focusArea}
                 onChange={e => setFocusArea(e.target.value)}
              />
@@ -93,26 +91,24 @@ export default function LeadershipEngine() {
           </div>
         )}
 
-        {/* STEP 2: LOADING SCREEN */}
         {step === 'generating' && (
             <div style={{textAlign:'center', padding:'40px'}}>
-                <div style={styles.loader}></div>
-                <p style={{marginTop: '20px', color: '#38bdf8'}}>AI is building your high-stakes scenario...</p>
+                <div style={{...styles.loader, animation: 'spin 1s linear infinite'}}></div>
+                <p style={{marginTop: '20px', color: '#38bdf8'}}>AI is building your custom challenge...</p>
             </div>
         )}
 
-        {/* STEP 3: THE LAB SESSION */}
         {step === 'lab' && scenario && (
           <div style={styles.section}>
             <div style={styles.scenarioBox}>
-              <span style={styles.tag}>{focusArea}</span>
+              <span style={styles.tag}>Testing: {focusArea}</span>
               <h3 style={{marginTop:'10px', color: '#fff'}}>{scenario.headline}</h3>
               <p style={{fontStyle:'italic', color:'#94a3b8'}}>{scenario.stakeholderTitle}: "{scenario.context}"</p>
             </div>
 
             {currentPushback && (
               <div style={styles.pushbackBox}>
-                <p><strong>{scenario.stakeholderTitle} pushback:</strong> "{currentPushback}"</p>
+                <p><strong>{scenario.stakeholderTitle}:</strong> "{currentPushback}"</p>
               </div>
             )}
 
@@ -120,17 +116,17 @@ export default function LeadershipEngine() {
               <>
                 <textarea 
                   style={styles.textarea} 
-                  placeholder={currentPushback ? "Respond to the pushback..." : "What is your leadership move?"}
+                  placeholder="Type your response..."
                   value={input}
                   onChange={e => setInput(e.target.value)}
                 />
                 <button style={styles.button} onClick={handleAssess} disabled={loading}>
-                  {loading ? "Stakeholder is thinking..." : "Send Response"}
+                  {loading ? "Thinking..." : "Send Response"}
                 </button>
               </>
             ) : (
               <div style={styles.resultArea}>
-                <h2 style={{color: '#22c55e', marginBottom: '20px'}}>✓ Session Complete</h2>
+                <h2 style={{color: '#22c55e'}}>✓ Assessment Complete</h2>
                 <div style={styles.scoreGrid}>
                     {Object.entries(result.scores).map(([k,v]) => (
                         <div key={k} style={styles.scoreBox}>
@@ -140,9 +136,9 @@ export default function LeadershipEngine() {
                     ))}
                 </div>
                 <div style={styles.feedbackBox}>
-                  <strong>Mentor Feedback:</strong> {result.feedback}
+                  <strong>Mentor Note:</strong> {result.feedback}
                 </div>
-                <button style={{...styles.button, marginTop: '20px'}} onClick={() => window.location.reload()}>Start New Lab</button>
+                <button style={{...styles.button, marginTop: '20px'}} onClick={() => window.location.reload()}>New Session</button>
               </div>
             )}
           </div>
@@ -167,8 +163,5 @@ const styles = {
     scoreGrid: { display: 'flex', gap: '10px', marginBottom: '20px' },
     scoreBox: { flex: 1, backgroundColor: '#0f172a', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #334155' },
     feedbackBox: { padding: '15px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', fontSize: '14px', lineHeight: '1.6' },
-    loader: { border: '4px solid #334155', borderTop: '4px solid #38bdf8', borderRadius: '50%', width: '30px', height: '30px', animation: 'spin 1s linear infinite', margin: 'auto' }
+    loader: { border: '4px solid #334155', borderTop: '4px solid #38bdf8', borderRadius: '50%', width: '30px', height: '30px', margin: 'auto' }
 };
-
-// Add this to your globals.css or keep as is if Next.js handles it
-// @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
